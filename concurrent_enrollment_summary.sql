@@ -228,7 +228,10 @@ cte_HSCE_2018 AS (
 --Main Query
 SELECT DSC_PIDM,
     'Fall ' || S_YEAR AS TERM,
-    COALESCE(h1.PIDM,h2.PIDM,h3.PIDM) AS Concurrent_Student
+    COALESCE(h1.PIDM,h2.PIDM,h3.PIDM) AS Concurrent_Student,
+    h1.PIDM,
+    h2.PIDM,
+    h3.PIDM
 FROM BAILEY.STUDENTS03@DSCIR d
 LEFT JOIN cte_HSCE_2019 h1 ON h1.PIDM = d.DSC_PIDM
     AND h1.TERM_DESC = 'Fall ' || S_YEAR
