@@ -3,7 +3,8 @@ WITH
      -- USHE YEAR 2020
          SELECT DISTINCT
              'Fall 2019' AS Term_Desc,
-             spriden_pidm AS PIDM
+             spriden_pidm AS PIDM,
+             shrtrce_credit_hours AS Att_Cr
           FROM spriden
            LEFT JOIN sorhsch ON sorhsch.ROWID = dsc.f_get_sorhsch_rowid(spriden_pidm),
                stvterm,
@@ -38,7 +39,8 @@ WITH
 
           SELECT DISTINCT
                 'Fall 2019'                                        AS Term_Desc,
-                 spriden_pidm                                      AS PIDM
+                 spriden_pidm                                      AS PIDM,
+                 nvl(scbcrse_credit_hr_low, scbcrse_credit_hr_high) AS Att_Cr
           FROM sfrstcr,
                dsc.dsc_swvgrde,
                spriden,
@@ -81,7 +83,8 @@ cte_HSCE_2018 AS (
          --USHE YEAR 2019
          SELECT DISTINCT
                'Fall 2018' AS Term_Desc,
-                spriden_pidm AS PIDM
+                spriden_pidm AS PIDM,
+                shrtrce_credit_hours AS Att_Cr
          FROM spriden
                   LEFT JOIN sorhsch ON sorhsch.ROWID = dsc.f_get_sorhsch_rowid(spriden_pidm),
               stvterm,
@@ -117,7 +120,8 @@ cte_HSCE_2018 AS (
 
           SELECT DISTINCT
                 'Fall 2018' AS Term_Desc,
-                spriden_pidm AS PIDM
+                spriden_pidm AS PIDM,
+                nvl(scbcrse_credit_hr_low, scbcrse_credit_hr_high) AS Att_Cr
           FROM sfrstcr,
                dsc.dsc_swvgrde,
                spriden,
@@ -160,7 +164,8 @@ cte_HSCE_2018 AS (
       --USHE YEAR 2018
           SELECT DISTINCT
              'Fall 2017'                     AS Term_Desc,
-             spriden_pidm                    AS PIDM
+             spriden_pidm                    AS PIDM,
+             shrtrce_credit_hours AS Att_Cr
           FROM spriden
            LEFT JOIN sorhsch ON sorhsch.ROWID = dsc.f_get_sorhsch_rowid(spriden_pidm),
                stvterm,
@@ -195,7 +200,8 @@ cte_HSCE_2018 AS (
 
           SELECT DISTINCT
                 'Fall 2017'                                        AS Term_Desc,
-                spriden_pidm                                       AS PIDM
+                spriden_pidm                                       AS PIDM,
+                nvl(scbcrse_credit_hr_low, scbcrse_credit_hr_high) AS Att_Cr
           FROM sfrstcr,
                dsc.dsc_swvgrde,
                spriden,
@@ -238,8 +244,8 @@ SELECT
         h1.PIDM AS Earned_HSCE_2020,
         h2.PIDM AS Earned_HSCE_2019,
         h3.PIDM AS Earned_HSCE_2018,
-        COALESCE(h1.PIDM, h2.PIDM, h3.PIDM),
-        CASE WHEN COALESCE(h1.PIDM, h2.PIDM, h3.PIDM) IS NULL THEN 'No' ELSE 'Yes' END
+        CASE WHEN COALESCE(h1.PIDM, h2.PIDM, h3.PIDM) IS NULL THEN 'No' ELSE 'Yes' END,
+        COALESCE(h1.Att_Cr, h2.Att_Cr, h3.Att_Cr) AS Att_Cr
 FROM BAILEY.STUDENTS03@DSCIR d
 LEFT JOIN cte_HSCE_2019 h1 ON h1.PIDM = d.DSC_PIDM
     AND d.S_YEAR = '2020'
@@ -251,6 +257,7 @@ WHERE d.S_YEAR IN ('2020', '2019', '2018')
     AND S_TERM = '2'
     AND S_EXTRACT = '3'
     AND S_ENTRY_ACTION IN ('FF', 'FH');
+
 
 
 
