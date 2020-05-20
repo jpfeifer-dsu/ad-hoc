@@ -4,7 +4,19 @@ WITH
          SELECT DISTINCT
              'Fall 2019' AS Term_Desc,
              spriden_pidm AS PIDM,
-             shrtrce_credit_hours AS Att_Cr
+             spriden_id AS Banner_ID,
+             spriden_last_name AS Last_Name,
+             spriden_first_name AS First_Name,
+             'Transfer' AS Credit_Type,
+             shrtrce_credit_hours AS Att_Cr,
+             cw_dsu_bucket AS GE_Bucket,
+             shrtrce_subj_code AS Subject,
+             shrtrce_crse_numb AS Course_Nbr,
+             CASE
+                WHEN shrtrce_subj_code = 'EL'
+                    THEN 'EL ' || to_char(lpad(shrtrce_crse_numb, 4, '0')) || ' - Various'
+                ELSE shrtrce_crse_title
+                END AS Course_Title
           FROM spriden
            LEFT JOIN sorhsch ON sorhsch.ROWID = dsc.f_get_sorhsch_rowid(spriden_pidm),
                stvterm,
@@ -40,7 +52,10 @@ WITH
           SELECT DISTINCT
                 'Fall 2019'                                        AS Term_Desc,
                  spriden_pidm                                      AS PIDM,
-                 nvl(scbcrse_credit_hr_low, scbcrse_credit_hr_high) AS Att_Cr
+                 nvl(scbcrse_credit_hr_low, scbcrse_credit_hr_high) AS Att_Cr,
+                 cw_dsu_bucket                                      AS GE_Bucket,
+                 scbcrse_subj_code                                  AS Subject,
+                 scbcrse_crse_numb                                  AS Course_Nbr
           FROM sfrstcr,
                dsc.dsc_swvgrde,
                spriden,
@@ -82,9 +97,12 @@ WITH
 cte_HSCE_2018 AS (
          --USHE YEAR 2019
          SELECT DISTINCT
-               'Fall 2018' AS Term_Desc,
-                spriden_pidm AS PIDM,
-                shrtrce_credit_hours AS Att_Cr
+             'Fall 2018' AS Term_Desc,
+             spriden_pidm AS PIDM,
+             shrtrce_credit_hours AS Att_Cr,
+             cw_dsu_bucket AS GE_Bucket,
+             shrtrce_subj_code AS Subject,
+             shrtrce_crse_numb AS Course_Nbr
          FROM spriden
                   LEFT JOIN sorhsch ON sorhsch.ROWID = dsc.f_get_sorhsch_rowid(spriden_pidm),
               stvterm,
@@ -121,7 +139,10 @@ cte_HSCE_2018 AS (
           SELECT DISTINCT
                 'Fall 2018' AS Term_Desc,
                 spriden_pidm AS PIDM,
-                nvl(scbcrse_credit_hr_low, scbcrse_credit_hr_high) AS Att_Cr
+                nvl(scbcrse_credit_hr_low, scbcrse_credit_hr_high) AS Att_Cr,
+                cw_dsu_bucket                                      AS GE_Bucket,
+                scbcrse_subj_code                                  AS Subject,
+                scbcrse_crse_numb                                  AS Course_Nbr
           FROM sfrstcr,
                dsc.dsc_swvgrde,
                spriden,
@@ -163,9 +184,12 @@ cte_HSCE_2018 AS (
       cte_HSCE_2017 AS (
       --USHE YEAR 2018
           SELECT DISTINCT
-             'Fall 2017'                     AS Term_Desc,
-             spriden_pidm                    AS PIDM,
-             shrtrce_credit_hours AS Att_Cr
+             'Fall 2017' AS Term_Desc,
+             spriden_pidm AS PIDM,
+             shrtrce_credit_hours AS Att_Cr,
+             cw_dsu_bucket AS GE_Bucket,
+             shrtrce_subj_code AS Subject,
+             shrtrce_crse_numb AS Course_Nbr
           FROM spriden
            LEFT JOIN sorhsch ON sorhsch.ROWID = dsc.f_get_sorhsch_rowid(spriden_pidm),
                stvterm,
@@ -199,9 +223,12 @@ cte_HSCE_2018 AS (
           UNION
 
           SELECT DISTINCT
-                'Fall 2017'                                        AS Term_Desc,
-                spriden_pidm                                       AS PIDM,
-                nvl(scbcrse_credit_hr_low, scbcrse_credit_hr_high) AS Att_Cr
+                'Fall 2017' AS Term_Desc,
+                spriden_pidm AS PIDM,
+                nvl(scbcrse_credit_hr_low, scbcrse_credit_hr_high) AS Att_Cr,
+                cw_dsu_bucket AS GE_Bucket,
+                scbcrse_subj_code AS Subject,
+                scbcrse_crse_numb AS Course_Nbr
           FROM sfrstcr,
                dsc.dsc_swvgrde,
                spriden,
@@ -245,7 +272,10 @@ SELECT
         h2.PIDM AS Earned_HSCE_2019,
         h3.PIDM AS Earned_HSCE_2018,
         CASE WHEN COALESCE(h1.PIDM, h2.PIDM, h3.PIDM) IS NULL THEN 'No' ELSE 'Yes' END,
-        COALESCE(h1.Att_Cr, h2.Att_Cr, h3.Att_Cr) AS Att_Cr
+        COALESCE(h1.Att_Cr, h2.Att_Cr, h3.Att_Cr) AS Att_Cr,
+        COALESCE(h1.GE_Bucket, h2.GE_Bucket, h3.GE_Bucket) AS GE_Bucket,
+        COALESCE(h1.Subject, h2.Subject, h3.Subject) AS Subject,
+        COALESCE(h1.Course_Nbr, h2.Course_Nbr, h3.Course_Nbr) AS Course_Nbr
 FROM BAILEY.STUDENTS03@DSCIR d
 LEFT JOIN cte_HSCE_2019 h1 ON h1.PIDM = d.DSC_PIDM
     AND d.S_YEAR = '2020'
@@ -257,7 +287,4 @@ WHERE d.S_YEAR IN ('2020', '2019', '2018')
     AND S_TERM = '2'
     AND S_EXTRACT = '3'
     AND S_ENTRY_ACTION IN ('FF', 'FH');
-
-
-
 
