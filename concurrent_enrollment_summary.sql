@@ -400,14 +400,14 @@ WITH cte_HSCE_2019 AS (
      )
 --Main Query
 SELECT DSC_PIDM,
-       d.S_YEAR,
-       h1.PIDM                                               AS Earned_HSCE_2020,
-       h2.PIDM                                               AS Earned_HSCE_2019,
-       h3.PIDM                                               AS Earned_HSCE_2018,
-       CASE WHEN COALESCE(h1.PIDM, h2.PIDM, h3.PIDM) IS NULL THEN 'No' ELSE 'Yes' END AS Earned_HSCE_Ind,
-       COALESCE(h1.Banner_ID, h2.Banner_ID, h3.Banner_ID) AS Banner_ID,
-       COALESCE(h1.Last_Name, h2.Last_Name, h3.Last_Name) AS Last_Name,
-       COALESCE(h1.First_Name, h2.First_Name, h3.First_Name) AS First_Name,
+       d.S_YEAR - 1 AS S_Year,
+       h1.PIDM                                               AS Earned_HSCE_2019,
+       h2.PIDM                                               AS Earned_HSCE_2018,
+       h3.PIDM                                               AS Earned_HSCE_2017,
+       CASE WHEN COALESCE(h1.PIDM, h2.PIDM, h3.PIDM) IS NULL THEN 'No' ELSE 'Yes' END AS PreColl_Cred,
+       COALESCE(h1.Banner_ID, h2.Banner_ID, h3.Banner_ID, S_ID) AS Banner_ID,
+       COALESCE(h1.Last_Name, h2.Last_Name, h3.Last_Name, S_Last) AS Last_Name,
+       COALESCE(h1.First_Name, h2.First_Name, h3.First_Name, S_First) AS First_Name,
        COALESCE(h1.Credit_Type, h2.Credit_Type, h3.Credit_Type) AS Credit_Type,
        COALESCE(h1.Att_Cr, h2.Att_Cr, h3.Att_Cr)             AS Att_Cr,
        COALESCE(h1.GE_Bucket, h2.GE_Bucket, h3.GE_Bucket)    AS GE_Bucket,
@@ -428,3 +428,6 @@ WHERE d.S_YEAR IN ('2020', '2019', '2018')
   AND S_TERM = '2'
   AND S_EXTRACT = '3'
   AND S_ENTRY_ACTION IN ('FF', 'FH');
+
+SELECT *
+FROM BAILEY.STUDENTS03@DSCIR;
