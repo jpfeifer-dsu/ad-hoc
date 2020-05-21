@@ -401,22 +401,22 @@ WITH cte_HSCE_2019 AS (
 --Main Query
 SELECT DSC_PIDM,
        d.S_YEAR,
-       h1.PIDM                                               AS Earned_HSCE_2020,
-       h2.PIDM                                               AS Earned_HSCE_2019,
-       h3.PIDM                                               AS Earned_HSCE_2018,
+       h1.PIDM                                                                        AS Earned_HSCE_2020,
+       h2.PIDM                                                                        AS Earned_HSCE_2019,
+       h3.PIDM                                                                        AS Earned_HSCE_2018,
        CASE WHEN COALESCE(h1.PIDM, h2.PIDM, h3.PIDM) IS NULL THEN 'No' ELSE 'Yes' END AS Earned_HSCE_Ind,
-       COALESCE(h1.Banner_ID, h2.Banner_ID, h3.Banner_ID) AS Banner_ID,
-       COALESCE(h1.Last_Name, h2.Last_Name, h3.Last_Name) AS Last_Name,
-       COALESCE(h1.First_Name, h2.First_Name, h3.First_Name) AS First_Name,
-       COALESCE(h1.Credit_Type, h2.Credit_Type, h3.Credit_Type) AS Credit_Type,
-       COALESCE(h1.Att_Cr, h2.Att_Cr, h3.Att_Cr)             AS Att_Cr,
-       COALESCE(h1.GE_Bucket, h2.GE_Bucket, h3.GE_Bucket)    AS GE_Bucket,
-       COALESCE(h1.Subject, h2.Subject, h3.Subject)          AS Subject,
-       COALESCE(h1.Course_Nbr, h2.Course_Nbr, h3.Course_Nbr) AS Course_Nbr,
-       COALESCE(h1.Course_Title, h2.Course_Title, h3.Course_Title) AS Course_Title,
-       COALESCE(h1.Grade, h2.Grade, h3.Grade) AS Grade,
-       COALESCE(h1.Passed_Count, h2.Passed_Count, h3.Passed_Count) AS Passed_Count,
-       COALESCE(h1.Earn_Cr, h2.Earn_Cr, h3.Earn_Cr) AS Earn_Cr
+       COALESCE(h1.Banner_ID, h2.Banner_ID, h3.Banner_ID)                             AS Banner_ID,
+       COALESCE(h1.Last_Name, h2.Last_Name, h3.Last_Name)                             AS Last_Name,
+       COALESCE(h1.First_Name, h2.First_Name, h3.First_Name)                          AS First_Name,
+       COALESCE(h1.Credit_Type, h2.Credit_Type, h3.Credit_Type, 'Not Concurrent')     AS Credit_Type,
+       COALESCE(h1.Att_Cr, h2.Att_Cr, h3.Att_Cr)                                      AS Att_Cr,
+       COALESCE(h1.GE_Bucket, h2.GE_Bucket, h3.GE_Bucket)                             AS GE_Bucket,
+       COALESCE(h1.Subject, h2.Subject, h3.Subject)                                   AS Subject,
+       COALESCE(h1.Course_Nbr, h2.Course_Nbr, h3.Course_Nbr)                          AS Course_Nbr,
+       COALESCE(h1.Course_Title, h2.Course_Title, h3.Course_Title)                    AS Course_Title,
+       COALESCE(h1.Grade, h2.Grade, h3.Grade)                                         AS Grade,
+       COALESCE(h1.Passed_Count, h2.Passed_Count, h3.Passed_Count)                    AS Passed_Count,
+       COALESCE(h1.Earn_Cr, h2.Earn_Cr, h3.Earn_Cr)                                   AS Earn_Cr
 FROM BAILEY.STUDENTS03@DSCIR d
          LEFT JOIN cte_HSCE_2019 h1 ON h1.PIDM = d.DSC_PIDM
     AND d.S_YEAR = '2020'
