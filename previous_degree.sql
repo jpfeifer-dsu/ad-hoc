@@ -1,33 +1,16 @@
--- look at 16924
-
---Grabs the previous degree earned at DSU
--- select pidm,
---        prev_degree,
---        stvdegc_code,
---        deg_rank_1,
---        deg_rank_2,
---        prev_degree_max_lvl,
---        case
---            when prev_degree_max_lvl like 'CER0' then '01'
---            when prev_degree_max_lvl like 'CER1' then '02'
---            when prev_degree_max_lvl like 'A%' then '03'
---            when prev_degree_max_lvl like 'B%' then '05'
---            when prev_degree_max_lvl like 'M%' then '07'
---        end as dxgrad_prev_degr
--- from (
 select
     pidm,
     deg_desc_1,
     deg_desc_2,
     deg_desc_3,
-    greatest(deg_rank_1, deg_rank_2, deg_rank_3) as greatest_rank,
     deg_rank_1,
     deg_rank_2,
     deg_rank_3,
+    greatest(nvl(deg_rank_1, 0), nvl(deg_rank_2, 0), nvl(deg_rank_3, 0)) as greatest_rank,
     case
-        when deg_rank_1 = greatest(deg_rank_1, deg_rank_2, deg_rank_3) then deg_desc_1
-        when deg_rank_2 = greatest(deg_rank_1, deg_rank_2, deg_rank_3) then deg_desc_2
-        when deg_rank_3 = greatest(deg_rank_1, deg_rank_2, deg_rank_3) then deg_desc_3
+        when deg_rank_1 = greatest(nvl(deg_rank_1, 0), nvl(deg_rank_2, 0), nvl(deg_rank_3, 0)) then deg_desc_1
+        when deg_rank_2 = greatest(nvl(deg_rank_1, 0), nvl(deg_rank_2, 0), nvl(deg_rank_3, 0)) then deg_desc_2
+        when deg_rank_3 = greatest(nvl(deg_rank_1, 0), nvl(deg_rank_2, 0), nvl(deg_rank_3, 0)) then deg_desc_3
         else coalesce(deg_desc_1, deg_desc_2, deg_desc_3)
     end as prev_degree_max_lvl
 from (
@@ -36,7 +19,7 @@ from (
         from shrdgmr
         where shrdgmr_seq_no > 1
         group by shrdgmr_pidm),
-        -- Grabs Highest Degree earned from a previous institution
+        -- Grabs Highest Degree earned from a previous institution (sordegr) and assigns a rank
         cte_prev_dgr2 as (
             select
                 sordegr_pidm as pidm,
@@ -58,7 +41,7 @@ from (
               and sordegr_degc_date <= to_date('01-JUN-2019')
             group by sordegr_pidm),
 
-        -- used to align pidm and degree to choose whichever degree is the highest level (rank)
+        -- Aligns pidm and degree needed in order to rank all previous degrees
         cte_prev_dgr3 as (
             select
                 pidm,
@@ -81,6 +64,8 @@ from (
               and sordegr_degc_code <> '000000'
               and spriden_change_ind is null
               and sordegr_degc_date <= to_date('01-JUN-2019')),
+
+        -- Grabs Highest Degree earned from Transfers and ranks them
         cte_prev_deg4 as (
             select
                 shrtram_pidm,
@@ -114,30 +99,13 @@ from (
         s3.deg_rank as deg_rank_2,
         s3.stvdegc_code as deg_desc_2,
         deg_rank_3,
-        shrtram_degc_code as deg_desc_3,
-        coalesce(greatest(s3.deg_rank, case
-                                           when shrdgmr_degc_code like 'M%' then '4'
-                                           when shrdgmr_degc_code like 'B%' then '3'
-                                           when shrdgmr_degc_code like 'A%' then '2'
-                                           when shrdgmr_degc_code like 'C%' then '1'
-                                           when shrdgmr_degc_code like 'L%' then '1'
-                                           else '0'
-                                       end), case
-                                                 when shrdgmr_degc_code like 'M%' then '4'
-                                                 when shrdgmr_degc_code like 'B%' then '3'
-                                                 when shrdgmr_degc_code like 'A%' then '2'
-                                                 when shrdgmr_degc_code like 'C%' then '1'
-                                                 when shrdgmr_degc_code like 'L%' then '1'
-                                                 else '0'
-                                             end, s3.deg_rank) as greatest_deg_rank
+        shrtram_degc_code as deg_desc_3
     from cte_prev_dgr s1
     left join shrdgmr s2 on s1.shrdgmr_pidm = s2.shrdgmr_pidm and s2.shrdgmr_seq_no = s1.shrdgmr_seq_no - 1
     left join cte_prev_dgr3 s3 on s3.pidm = s1.shrdgmr_pidm
     left join cte_prev_deg4 s4 on s4.shrtram_pidm = s1.shrdgmr_pidm
-    where s2.shrdgmr_seq_no <> s1.shrdgmr_seq_no
-      and pidm = '16924')
-order by
-    1;
+    where s2.shrdgmr_seq_no <> s1.shrdgmr_seq_no)
+order by 1;
 
 select *
 from shrtram
@@ -147,5 +115,4 @@ where shrtram_degc_code is not null
 select *
 from sordegr
 where sordegr_pidm = '6198'
-order by
-    sordegr_pidm;
+order by sordegr_pidm;
