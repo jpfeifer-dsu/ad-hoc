@@ -193,7 +193,7 @@ Faculty Count for Dept Review
       employee AS (SELECT DISTINCT
                    CASE
                        WHEN f.pebempl_ecls_code IN ('F2', 'F9') AND e.perappt_tenure_code = 'T' THEN 'Full-Time Tenured'
-                       WHEN f.pebempl_ecls_code IN ('F2', 'F9') AND e.perappt_tenure_code = 'O' THEN 'Full-Time Non-Tenured'
+                       WHEN f.pebempl_ecls_code IN ('F2', 'F9') AND e.perappt_tenure_code != 'T' THEN 'Full-Time Non-Tenured'
                        ELSE 'Part Time'
                        END AS fac_status,
                    a.c_instr_id,
