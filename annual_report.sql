@@ -179,7 +179,7 @@ LEFT JOIN degrees_conferred_changed e
           a.prgm_code;
 
 /******************************************************************
-  Page 9 of Annual Review
+  Page 8 of Annual Review
   Department & Program:
 ******************************************************************/
 
