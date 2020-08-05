@@ -1,4 +1,4 @@
-SELECT count(sgrchrt_pidm),
+SELECT count(sgrchrt_pidm) AS pidm_count,
        sgrchrt_term_code_eff,
        sgrchrt_chrt_code,
        sgrchrt_activity_date
