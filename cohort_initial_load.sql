@@ -1,5 +1,5 @@
--- INSERT
---   INTO sgrchrt (sarchrt_pidm, sarchrt_term_code_entry, sarchrt_chrt_code, sarchrt_activity_date)
+INSERT
+  INTO sgrchrt (sarchrt_pidm, sarchrt_term_code_entry, sarchrt_chrt_code, sarchrt_activity_date)
 
 /*
 FALL
@@ -8,7 +8,7 @@ Cohort FTFB200940, FTPB200940, FTFO200940, FTPO200940
 Count 322
  */
 
-SELECT count(sgrchrt_pidm),
+SELECT sgrchrt_pidm,
        sgrchrt_term_code_eff,
        sgrchrt_chrt_code,
        sgrchrt_activity_date
@@ -259,7 +259,5 @@ Count 322
      AND s_entry_action IN ('FF', 'FH', 'TU')
      AND s_pt_ft IN ('F', 'P')
      )
- GROUP BY sgrchrt_term_code_eff,
-          sgrchrt_chrt_code, sgrchrt_activity_date
  ORDER BY sgrchrt_term_code_eff desc, sgrchrt_chrt_code;
 
