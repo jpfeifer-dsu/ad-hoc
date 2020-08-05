@@ -56,10 +56,15 @@ SELECT count(sgrchrt_pidm),
                   WHEN dsc_term_code = '201843' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB201840'
                   WHEN dsc_term_code = '201843' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO201840'
                   WHEN dsc_term_code = '201843' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO201840'
+                  --201943
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'FTFB201940'
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB201940'
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO201940'
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO201940'
                   END AS sgrchrt_chrt_code,
                sysdate AS sgrchrt_activity_date
           FROM students03 s1
-         WHERE dsc_term_code IN ('200943', '201043', '201143', '201243', '201343', '201443', '201543', '201643', '201743', '201843')
+         WHERE dsc_term_code IN ('200943', '201043', '201143', '201243', '201343', '201443', '201543', '201643', '201743', '201843', '201943')
            AND s_pt_ft IN ('F', 'P')
            AND (s_entry_action IN ('FF', 'FH') OR (EXISTS(SELECT 'Y'
                                                             FROM students03 s2
@@ -128,10 +133,15 @@ Count 322
                   WHEN dsc_term_code = '201843' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'TUPB201840'
                   WHEN dsc_term_code = '201843' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'TUFO201840'
                   WHEN dsc_term_code = '201843' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'TUPO201840'
+                  --201943
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'TUFB201940'
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'TUPB201940'
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'TUFO201940'
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'TUPO201940'
                   END AS sgrchrt_chrt_code,
                sysdate AS sgrchrt_activity_date
           FROM students03 s1
-         WHERE dsc_term_code IN ('200943', '201043', '201143', '201243', '201343', '201443', '201543', '201643', '201743', '201843')
+         WHERE dsc_term_code IN ('200943', '201043', '201143', '201243', '201343', '201443', '201543', '201643', '201743', '201843', '201943')
            AND s_pt_ft IN ('F', 'P')
            AND (s_entry_action = 'TU' OR (EXISTS(SELECT 'Y'
                                                    FROM students03 s2
