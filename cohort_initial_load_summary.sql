@@ -1,13 +1,3 @@
--- INSERT
---   INTO sgrchrt (sarchrt_pidm, sarchrt_term_code_entry, sarchrt_chrt_code, sarchrt_activity_date)
-
-/*
-FALL
-1st Time, FT, PT, BS, OT
-Cohort FTFB200940, FTPB200940, FTFO200940, FTPO200940
-Count 322
- */
-
 SELECT count(sgrchrt_pidm),
        sgrchrt_term_code_eff,
        sgrchrt_chrt_code,
