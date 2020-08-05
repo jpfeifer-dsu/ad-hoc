@@ -1,265 +1,289 @@
--- INSERT
---   INTO sgrchrt (sarchrt_pidm, sarchrt_term_code_entry, sarchrt_chrt_code, sarchrt_activity_date)
+WITH
+      cte_HSCE_2019 AS (
+     -- USHE YEAR 2020
+         SELECT DISTINCT
+             'Fall 2019' AS Term_Desc,
+             spriden_pidm AS PIDM,
+             spriden_id AS Banner_ID,
+             spriden_last_name AS Last_Name,
+             spriden_first_name AS First_Name,
+             'Transfer' AS Credit_Type,
+             shrtrce_credit_hours AS Att_Cr,
+             cw_dsu_bucket AS GE_Bucket,
+             shrtrce_subj_code AS Subject,
+             shrtrce_crse_numb AS Course_Nbr,
+             CASE
+                WHEN shrtrce_subj_code = 'EL'
+                    THEN 'EL ' || to_char(lpad(shrtrce_crse_numb, 4, '0')) || ' - Various'
+                ELSE shrtrce_crse_title
+                END AS Course_Title
+          FROM spriden
+           LEFT JOIN sorhsch ON sorhsch.ROWID = dsc.f_get_sorhsch_rowid(spriden_pidm),
+               stvterm,
+               spbpers,
+               students_201943,
+               shrtrce LEFT JOIN cw_ge_buckets_all ON shrtrce_subj_code = cw_subj_code AND shrtrce_crse_numb = cw_crse_numb
+          WHERE shrtrce_pidm = pidm
+            AND spbpers_pidm = spriden_pidm
+            AND spriden_pidm = shrtrce_pidm
+            AND stvterm_code = shrtrce_term_code_eff
+            AND shrtrce_term_code_eff <= '201940'
+            AND shrtrce_crse_numb != '0000'
+            AND spriden_change_ind IS NULL
+            AND s_entry_action LIKE 'F%'
+            AND (
+                      sorhsch_graduation_date
+                      > stvterm_start_date
+                  OR
+                      shrtrce_grde_code = 'P'
+                  OR
+                      (
+                              sorhsch_graduation_date IS NULL
+                              AND
+                              f_calculate_age(stvterm_start_date
+                                  , spbpers_birth_date
+                                  , spbpers_dead_date)
+                                  < 18
+                          )
+              )
 
-/*
-FALL
-1st Time, FT, PT, BS, OT
-Cohort FTFB200940, FTPB200940, FTFO200940, FTPO200940
-Count 322
- */
+          UNION
 
-SELECT count(sgrchrt_pidm),
-       sgrchrt_term_code_eff,
-       sgrchrt_chrt_code,
-       sgrchrt_activity_date
-  FROM (SELECT dsc_pidm AS sgrchrt_pidm,
-               substr(dsc_term_code, 0, 5) || '0' AS sgrchrt_term_code_eff,
-               CASE
-                  --200943
-                  WHEN dsc_term_code = '200943' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'FTFB200940'
-                  WHEN dsc_term_code = '200943' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB200940'
-                  WHEN dsc_term_code = '200943' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO200940'
-                  WHEN dsc_term_code = '200943' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO200940'
+          SELECT DISTINCT
+                'Fall 2019'                                        AS Term_Desc,
+                 spriden_pidm                                      AS PIDM,
+                 nvl(scbcrse_credit_hr_low, scbcrse_credit_hr_high) AS Att_Cr,
+                 cw_dsu_bucket                                      AS GE_Bucket,
+                 scbcrse_subj_code                                  AS Subject,
+                 scbcrse_crse_numb                                  AS Course_Nbr
+          FROM sfrstcr,
+               dsc.dsc_swvgrde,
+               spriden,
+               scbcrse c1,
+               ssbsect
+                   LEFT JOIN cw_ge_buckets_all
+                             ON ssbsect_subj_code = cw_subj_code AND ssbsect_crse_numb = cw_crse_numb
+          WHERE sfrstcr_crn = ssbsect_crn
+            AND swvgrde_crn = ssbsect_crn
+            AND spriden_pidm = sfrstcr_pidm
+            AND swvgrde_pidm = sfrstcr_pidm
+            AND sfrstcr_term_code = ssbsect_term_code
+            AND swvgrde_term_code = sfrstcr_term_code
+            AND ssbsect_subj_code = scbcrse_subj_code
+            AND ssbsect_crse_numb = scbcrse_crse_numb
+            AND ssbsect_term_code <= '201940'
+            AND ssbsect_subj_code != 'CED'
+            AND f_calc_entry_action(sfrstcr_pidm, sfrstcr_term_code) = 'HS' --IN ('FF','FH')
+            AND sfrstcr_rsts_code IN (SELECT stvrsts_code FROM stvrsts WHERE stvrsts_incl_sect_enrl = 'Y')
+            AND spriden_change_ind IS NULL
+            AND scbcrse_eff_term =
+                (
+                    SELECT MAX(c2.scbcrse_eff_term)
+                    FROM scbcrse c2
+                    WHERE c2.scbcrse_subj_code = ssbsect_subj_code
+                      AND c2.scbcrse_crse_numb = ssbsect_crse_numb
+                      AND c2.scbcrse_eff_term <= ssbsect_term_code
+                )
+            AND EXISTS
+              (
+                  SELECT 'Y'
+                  FROM bailey.students03@dscir
+                  WHERE dsc_pidm = sfrstcr_pidm
+                    AND dsc_term_code = '201943'
+                    AND s_entry_action LIKE 'F%'
+              )
+),
 
-                  --201043
-                  WHEN dsc_term_code = '201043' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'FTFB201040'
-                  WHEN dsc_term_code = '201043' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB201040'
-                  WHEN dsc_term_code = '201043' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO201040'
-                  WHEN dsc_term_code = '201043' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO201040'
-                  --201143
-                  WHEN dsc_term_code = '201143' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'FTFB201140'
-                  WHEN dsc_term_code = '201143' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB201140'
-                  WHEN dsc_term_code = '201143' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO201140'
-                  WHEN dsc_term_code = '201143' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO201140'
-                  --201243
-                  WHEN dsc_term_code = '201243' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'FTFB201240'
-                  WHEN dsc_term_code = '201243' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB201240'
-                  WHEN dsc_term_code = '201243' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO201240'
-                  WHEN dsc_term_code = '201243' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO201240'
-                  --201343
-                  WHEN dsc_term_code = '201343' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'FTFB201340'
-                  WHEN dsc_term_code = '201343' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB201340'
-                  WHEN dsc_term_code = '201343' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO201340'
-                  WHEN dsc_term_code = '201343' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO201340'
-                  --201443
-                  WHEN dsc_term_code = '201443' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'FTFB201440'
-                  WHEN dsc_term_code = '201443' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB201440'
-                  WHEN dsc_term_code = '201443' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO201440'
-                  WHEN dsc_term_code = '201443' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO201440'
-                  --201543
-                  WHEN dsc_term_code = '201543' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'FTFB201540'
-                  WHEN dsc_term_code = '201543' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB201540'
-                  WHEN dsc_term_code = '201543' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO201540'
-                  WHEN dsc_term_code = '201543' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO201540'
-                  --201643
-                  WHEN dsc_term_code = '201643' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'FTFB201640'
-                  WHEN dsc_term_code = '201643' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB201640'
-                  WHEN dsc_term_code = '201643' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO201640'
-                  WHEN dsc_term_code = '201643' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO201640'
-                  --201743
-                  WHEN dsc_term_code = '201743' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'FTFB201740'
-                  WHEN dsc_term_code = '201743' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB201740'
-                  WHEN dsc_term_code = '201743' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO201740'
-                  WHEN dsc_term_code = '201743' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO201740'
-                  --201843
-                  WHEN dsc_term_code = '201843' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'FTFB201840'
-                  WHEN dsc_term_code = '201843' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB201840'
-                  WHEN dsc_term_code = '201843' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO201840'
-                  WHEN dsc_term_code = '201843' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO201840'
-                  END AS sgrchrt_chrt_code,
-               sysdate AS sgrchrt_activity_date
-          FROM students03 s1
-         WHERE dsc_term_code IN ('200943', '201043', '201143', '201243', '201343', '201443', '201543', '201643', '201743', '201843')
-           AND s_pt_ft IN ('F', 'P')
-           AND (s_entry_action IN ('FF', 'FH') OR (EXISTS(SELECT 'Y'
-                                                            FROM students03 s2
-                                                           WHERE s2.dsc_pidm = s1.dsc_pidm
-                                                             AND s2.dsc_term_code = substr(s1.dsc_term_code, 1, 4) || '3E' -- The Summer previous to that Fall.
-                                                             AND s2.s_entry_action IN ('FF', 'FH', 'HS') -- If they were HS in Summer, and FH the next Fall, I assume they should have been labeled FH.
-                                                      ) AND (s_entry_action = 'CS')))
-         UNION
+cte_HSCE_2018 AS (
+         --USHE YEAR 2019
+         SELECT DISTINCT
+             'Fall 2018' AS Term_Desc,
+             spriden_pidm AS PIDM,
+             shrtrce_credit_hours AS Att_Cr,
+             cw_dsu_bucket AS GE_Bucket,
+             shrtrce_subj_code AS Subject,
+             shrtrce_crse_numb AS Course_Nbr
+         FROM spriden
+                  LEFT JOIN sorhsch ON sorhsch.ROWID = dsc.f_get_sorhsch_rowid(spriden_pidm),
+              stvterm,
+              spbpers,
+              students_201843,
+              shrtrce
+                  LEFT JOIN cw_ge_buckets_all ON shrtrce_subj_code = cw_subj_code AND shrtrce_crse_numb = cw_crse_numb
+         WHERE shrtrce_pidm = pidm
+           AND spbpers_pidm = spriden_pidm
+           AND spriden_pidm = shrtrce_pidm
+           AND stvterm_code = shrtrce_term_code_eff
+           AND shrtrce_term_code_eff <= '201840'
+           AND shrtrce_crse_numb != '0000'
+           AND spriden_change_ind IS NULL
+           AND s_entry_action LIKE 'F%'
+           AND (
+                     sorhsch_graduation_date
+                     > stvterm_start_date
+                 OR
+                     shrtrce_grde_code = 'P'
+                 OR
+                     (
+                             sorhsch_graduation_date IS NULL
+                             AND
+                             f_calculate_age(stvterm_start_date
+                                 , spbpers_birth_date
+                                 , spbpers_dead_date)
+                                 < 18
+                         )
+             )
 
-/*
-FALL
-Transfers, FT, PT, BS, OT
-Cohort FTFB200940, FTPB200940, FTFO200940, FTPO200940
-Count 322
-*/
-        SELECT dsc_pidm AS sgrchrt_pidm,
-               substr(dsc_term_code, 0, 5) || '0' AS sgrchrt_term_code_eff,
-               CASE
-                  --200943
-                  WHEN dsc_term_code = '200943' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'TUFB200940'
-                  WHEN dsc_term_code = '200943' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'TUPB200940'
-                  WHEN dsc_term_code = '200943' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'TUFO200940'
-                  WHEN dsc_term_code = '200943' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'TUPO200940'
-                   --201043
-                  WHEN dsc_term_code = '201043' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'TUFB201040'
-                  WHEN dsc_term_code = '201043' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'TUPB201040'
-                  WHEN dsc_term_code = '201043' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'TUFO201040'
-                  WHEN dsc_term_code = '201043' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'TUPO201040'
-                  --201143
-                  WHEN dsc_term_code = '201143' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'TUFB201140'
-                  WHEN dsc_term_code = '201143' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'TUPB201140'
-                  WHEN dsc_term_code = '201143' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'TUFO201140'
-                  WHEN dsc_term_code = '201143' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'TUPO201140'
-                  --201243
-                  WHEN dsc_term_code = '201243' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'TUFB201240'
-                  WHEN dsc_term_code = '201243' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'TUPB201240'
-                  WHEN dsc_term_code = '201243' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'TUFO201240'
-                  WHEN dsc_term_code = '201243' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'TUPO201240'
-                  --201343
-                  WHEN dsc_term_code = '201343' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'TUFB201340'
-                  WHEN dsc_term_code = '201343' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'TUPB201340'
-                  WHEN dsc_term_code = '201343' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'TUFO201340'
-                  WHEN dsc_term_code = '201343' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'TUPO201340'
-                  --201443
-                  WHEN dsc_term_code = '201443' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'TUFB201440'
-                  WHEN dsc_term_code = '201443' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'TUPB201440'
-                  WHEN dsc_term_code = '201443' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'TUFO201440'
-                  WHEN dsc_term_code = '201443' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'TUPO201440'
-                  --201543
-                  WHEN dsc_term_code = '201543' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'TUFB201540'
-                  WHEN dsc_term_code = '201543' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'TUPB201540'
-                  WHEN dsc_term_code = '201543' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'TUFO201540'
-                  WHEN dsc_term_code = '201543' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'TUPO201540'
-                  --201643
-                  WHEN dsc_term_code = '201643' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'TUFB201640'
-                  WHEN dsc_term_code = '201643' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'TUPB201640'
-                  WHEN dsc_term_code = '201643' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'TUFO201640'
-                  WHEN dsc_term_code = '201643' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'TUPO201640'
-                  --201743
-                  WHEN dsc_term_code = '201743' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'TUFB201740'
-                  WHEN dsc_term_code = '201743' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'TUPB201740'
-                  WHEN dsc_term_code = '201743' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'TUFO201740'
-                  WHEN dsc_term_code = '201743' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'TUPO201740'
-                  --201843
-                  WHEN dsc_term_code = '201843' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'TUFB201840'
-                  WHEN dsc_term_code = '201843' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'TUPB201840'
-                  WHEN dsc_term_code = '201843' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'TUFO201840'
-                  WHEN dsc_term_code = '201843' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'TUPO201840'
-                  END AS sgrchrt_chrt_code,
-               sysdate AS sgrchrt_activity_date
-          FROM students03 s1
-         WHERE dsc_term_code IN ('200943', '201043', '201143', '201243', '201343', '201443', '201543', '201643', '201743', '201843')
-           AND s_pt_ft IN ('F', 'P')
-           AND (s_entry_action = 'TU' OR (EXISTS(SELECT 'Y'
-                                                   FROM students03 s2
-                                                  WHERE s2.dsc_pidm = s1.dsc_pidm
-                                                    AND s2.dsc_term_code = substr(s1.dsc_term_code, 1, 4) || '3E' -- The Summer previous to that Fall.
-                                                    AND s2.s_entry_action = 'TU' -- If they were TU in Summer, and something else the next Fall, I assume they should have been labeled TU.
-                                             ) AND (s_entry_action != 'HS')))
+          UNION
 
-     UNION
+          SELECT DISTINCT
+                'Fall 2018' AS Term_Desc,
+                spriden_pidm AS PIDM,
+                nvl(scbcrse_credit_hr_low, scbcrse_credit_hr_high) AS Att_Cr,
+                cw_dsu_bucket                                      AS GE_Bucket,
+                scbcrse_subj_code                                  AS Subject,
+                scbcrse_crse_numb                                  AS Course_Nbr
+          FROM sfrstcr,
+               dsc.dsc_swvgrde,
+               spriden,
+               scbcrse c1,
+               ssbsect
+                   LEFT JOIN cw_ge_buckets_all
+                             ON ssbsect_subj_code = cw_subj_code AND ssbsect_crse_numb = cw_crse_numb
+          WHERE sfrstcr_crn = ssbsect_crn
+            AND swvgrde_crn = ssbsect_crn
+            AND spriden_pidm = sfrstcr_pidm
+            AND swvgrde_pidm = sfrstcr_pidm
+            AND sfrstcr_term_code = ssbsect_term_code
+            AND swvgrde_term_code = sfrstcr_term_code
+            AND ssbsect_subj_code = scbcrse_subj_code
+            AND ssbsect_crse_numb = scbcrse_crse_numb
+            AND ssbsect_term_code <= '201840'
+            AND ssbsect_subj_code != 'CED'
+            AND f_calc_entry_action(sfrstcr_pidm, sfrstcr_term_code) = 'HS' --IN ('FF','FH')
+            AND sfrstcr_rsts_code IN (SELECT stvrsts_code FROM stvrsts WHERE stvrsts_incl_sect_enrl = 'Y')
+            AND spriden_change_ind IS NULL
+            AND scbcrse_eff_term =
+                (
+                    SELECT MAX(c2.scbcrse_eff_term)
+                    FROM scbcrse c2
+                    WHERE c2.scbcrse_subj_code = ssbsect_subj_code
+                      AND c2.scbcrse_crse_numb = ssbsect_crse_numb
+                      AND c2.scbcrse_eff_term <= ssbsect_term_code
+                )
+            AND EXISTS
+              (
+                  SELECT 'Y'
+                  FROM bailey.students03@dscir
+                  WHERE dsc_pidm = sfrstcr_pidm
+                    AND dsc_term_code = '201843'
+                    AND s_entry_action LIKE 'F%'
+              )
+),
 
-/*
-SPRING
-1st Time, Transfer, FT, PT, BS, OT
-Cohort FTFB200940, FTPB200940, FTFO200940, FTPO200940
-Count 322
- */
---Cohort FTFB201020 - 1st Time,FT,BS,Fresh
-  SELECT dsc_pidm AS sgrchrt_pidm,
-               substr(dsc_term_code, 0, 5) || '0' AS sgrchrt_term_code_eff,
-               CASE
-                  --201023
-                  WHEN dsc_term_code = '201023' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFB201020'
-                  WHEN dsc_term_code = '201023' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFO201020'
-                  WHEN dsc_term_code = '201023' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPB201020'
-                  WHEN dsc_term_code = '201023' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPO201020'
-                  WHEN dsc_term_code = '201023' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action =  'TU' THEN 'TUFB201020'
-                  WHEN dsc_term_code = '201023' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action =  'TU' THEN 'TUFO201020'
-                  WHEN dsc_term_code = '201023' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action =  'TU' THEN 'TUPB201020'
-                  WHEN dsc_term_code = '201023' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action =  'TU' THEN 'TUPO201020'
-                  --201123
-                  WHEN dsc_term_code = '201123' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFB201120'
-                  WHEN dsc_term_code = '201123' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFO201120'
-                  WHEN dsc_term_code = '201123' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPB201120'
-                  WHEN dsc_term_code = '201123' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPO201120'
-                  WHEN dsc_term_code = '201123' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action =  'TU' THEN 'TUFB201120'
-                  WHEN dsc_term_code = '201123' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action =  'TU' THEN 'TUFO201120'
-                  WHEN dsc_term_code = '201123' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action =  'TU' THEN 'TUPB201120'
-                  WHEN dsc_term_code = '201123' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action =  'TU' THEN 'TUPO201120'
-                  --201223
-                  WHEN dsc_term_code = '201223' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFB201220'
-                  WHEN dsc_term_code = '201223' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFO201220'
-                  WHEN dsc_term_code = '201223' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPB201220'
-                  WHEN dsc_term_code = '201223' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPO201220'
-                  WHEN dsc_term_code = '201223' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action =  'TU' THEN 'TUFB201220'
-                  WHEN dsc_term_code = '201223' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action =  'TU' THEN 'TUFO201220'
-                  WHEN dsc_term_code = '201223' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action =  'TU' THEN 'TUPB201220'
-                  WHEN dsc_term_code = '201223' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action =  'TU' THEN 'TUPO201220'
-                  --201323
-                  WHEN dsc_term_code = '201323' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFB201320'
-                  WHEN dsc_term_code = '201323' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFO201320'
-                  WHEN dsc_term_code = '201323' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPB201320'
-                  WHEN dsc_term_code = '201323' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPO201320'
-                  WHEN dsc_term_code = '201323' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action =  'TU' THEN 'TUFB201320'
-                  WHEN dsc_term_code = '201323' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action =  'TU' THEN 'TUFO201320'
-                  WHEN dsc_term_code = '201323' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action =  'TU' THEN 'TUPB201320'
-                  WHEN dsc_term_code = '201323' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action =  'TU' THEN 'TUPO201320'
-                  --201423
-                  WHEN dsc_term_code = '201423' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFB201420'
-                  WHEN dsc_term_code = '201423' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFO201420'
-                  WHEN dsc_term_code = '201423' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPB201420'
-                  WHEN dsc_term_code = '201423' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPO201420'
-                  WHEN dsc_term_code = '201423' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action = 'TU' THEN 'TUFB201420'
-                  WHEN dsc_term_code = '201423' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUFO201420'
-                  WHEN dsc_term_code = '201423' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action = 'TU' THEN 'TUPB201420'
-                  WHEN dsc_term_code = '201423' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUPO201420'
-                  --201523
-                  WHEN dsc_term_code = '201523' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFB201520'
-                  WHEN dsc_term_code = '201523' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFO201520'
-                  WHEN dsc_term_code = '201523' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPB201520'
-                  WHEN dsc_term_code = '201523' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPO201520'
-                  WHEN dsc_term_code = '201523' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action = 'TU' THEN 'TUFB201520'
-                  WHEN dsc_term_code = '201523' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUFO201520'
-                  WHEN dsc_term_code = '201523' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action = 'TU' THEN 'TUPB201520'
-                  WHEN dsc_term_code = '201523' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUPO201520'
-                  --201623
-                  WHEN dsc_term_code = '201623' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFB201620'
-                  WHEN dsc_term_code = '201623' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFO201620'
-                  WHEN dsc_term_code = '201623' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPB201620'
-                  WHEN dsc_term_code = '201623' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPO201620'
-                  WHEN dsc_term_code = '201623' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action = 'TU' THEN 'TUFB201620'
-                  WHEN dsc_term_code = '201623' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUFO201620'
-                  WHEN dsc_term_code = '201623' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action = 'TU' THEN 'TUPB201620'
-                  WHEN dsc_term_code = '201623' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUPO201620'
-                  --201723
-                  WHEN dsc_term_code = '201723' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFB201720'
-                  WHEN dsc_term_code = '201723' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFO201720'
-                  WHEN dsc_term_code = '201723' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPB201720'
-                  WHEN dsc_term_code = '201723' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPO201720'
-                  WHEN dsc_term_code = '201723' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action = 'TU' THEN 'TUFB201720'
-                  WHEN dsc_term_code = '201723' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUFO201720'
-                  WHEN dsc_term_code = '201723' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action = 'TU' THEN 'TUPB201720'
-                  WHEN dsc_term_code = '201723' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUPO201720'
-                  --201823
-                  WHEN dsc_term_code = '201823' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFB201820'
-                  WHEN dsc_term_code = '201823' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFO201820'
-                  WHEN dsc_term_code = '201823' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPB201820'
-                  WHEN dsc_term_code = '201823' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPO201820'
-                  WHEN dsc_term_code = '201823' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action = 'TU' THEN 'TUFB201820'
-                  WHEN dsc_term_code = '201823' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUFO201820'
-                  WHEN dsc_term_code = '201823' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action = 'TU' THEN 'TUPB201820'
-                  WHEN dsc_term_code = '201823' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUPO201820'
-                  --201923
-                  WHEN dsc_term_code = '201923' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFB201920'
-                  WHEN dsc_term_code = '201923' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFO201920'
-                  WHEN dsc_term_code = '201923' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPB201920'
-                  WHEN dsc_term_code = '201923' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPO201920'
-                  WHEN dsc_term_code = '201923' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action = 'TU' THEN 'TUFB201920'
-                  WHEN dsc_term_code = '201923' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUFO201920'
-                  WHEN dsc_term_code = '201923' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action = 'TU' THEN 'TUPB201920'
-                  WHEN dsc_term_code = '201923' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUPO201920'
-                  END AS sgrchrt_chrt_code,
-               sysdate AS sgrchrt_activity_date
-    FROM enroll.students03
-   WHERE dsc_term_code IN ('201023', '201123', '201223', '201323', '201423','201523', '201623', '201723', '201823', '201923')
-     AND s_entry_action IN ('FF', 'FH', 'TU')
-     AND s_pt_ft IN ('F', 'P')
-     )
- GROUP BY sgrchrt_term_code_eff,
-          sgrchrt_chrt_code, sgrchrt_activity_date
- ORDER BY sgrchrt_term_code_eff desc, sgrchrt_chrt_code;
+      cte_HSCE_2017 AS (
+      --USHE YEAR 2018
+          SELECT DISTINCT
+             'Fall 2017' AS Term_Desc,
+             spriden_pidm AS PIDM,
+             shrtrce_credit_hours AS Att_Cr,
+             cw_dsu_bucket AS GE_Bucket,
+             shrtrce_subj_code AS Subject,
+             shrtrce_crse_numb AS Course_Nbr
+          FROM spriden
+           LEFT JOIN sorhsch ON sorhsch.ROWID = dsc.f_get_sorhsch_rowid(spriden_pidm),
+               stvterm,
+               spbpers,
+               students_201743,
+               shrtrce LEFT JOIN cw_ge_buckets_all ON shrtrce_subj_code = cw_subj_code AND shrtrce_crse_numb = cw_crse_numb
+          WHERE shrtrce_pidm = pidm
+            AND spbpers_pidm = spriden_pidm
+            AND spriden_pidm = shrtrce_pidm
+            AND stvterm_code = shrtrce_term_code_eff
+            AND shrtrce_term_code_eff <= '201740'
+            AND shrtrce_crse_numb != '0000'
+            AND spriden_change_ind IS NULL
+            AND s_entry_action LIKE 'F%'
+            AND (
+                      sorhsch_graduation_date
+                      > stvterm_start_date
+                  OR
+                      shrtrce_grde_code = 'P'
+                  OR
+                      (
+                              sorhsch_graduation_date IS NULL
+                              AND
+                              f_calculate_age(stvterm_start_date
+                                  , spbpers_birth_date
+                                  , spbpers_dead_date)
+                                  < 18
+                          )
+              )
 
+          UNION
+
+          SELECT DISTINCT
+                'Fall 2017' AS Term_Desc,
+                spriden_pidm AS PIDM,
+                nvl(scbcrse_credit_hr_low, scbcrse_credit_hr_high) AS Att_Cr,
+                cw_dsu_bucket AS GE_Bucket,
+                scbcrse_subj_code AS Subject,
+                scbcrse_crse_numb AS Course_Nbr
+          FROM sfrstcr,
+               dsc.dsc_swvgrde,
+               spriden,
+               scbcrse c1,
+               ssbsect LEFT JOIN cw_ge_buckets_all ON ssbsect_subj_code = cw_subj_code AND ssbsect_crse_numb = cw_crse_numb
+          WHERE sfrstcr_crn = ssbsect_crn
+            AND swvgrde_crn = ssbsect_crn
+            AND spriden_pidm = sfrstcr_pidm
+            AND swvgrde_pidm = sfrstcr_pidm
+            AND sfrstcr_term_code = ssbsect_term_code
+            AND swvgrde_term_code = sfrstcr_term_code
+            AND ssbsect_subj_code = scbcrse_subj_code
+            AND ssbsect_crse_numb = scbcrse_crse_numb
+            AND ssbsect_term_code <= '201740'
+            AND ssbsect_subj_code != 'CED'
+            AND f_calc_entry_action(sfrstcr_pidm, sfrstcr_term_code) = 'HS' --IN ('FF','FH')
+            AND sfrstcr_rsts_code IN (SELECT stvrsts_code FROM stvrsts WHERE stvrsts_incl_sect_enrl = 'Y')
+            AND spriden_change_ind IS NULL
+            AND scbcrse_eff_term =
+                (
+                    SELECT MAX(c2.scbcrse_eff_term)
+                    FROM scbcrse c2
+                    WHERE c2.scbcrse_subj_code = ssbsect_subj_code
+                      AND c2.scbcrse_crse_numb = ssbsect_crse_numb
+                      AND c2.scbcrse_eff_term <= ssbsect_term_code
+                )
+            AND EXISTS
+              (
+                  SELECT 'Y'
+                  FROM bailey.students03@dscir
+                  WHERE dsc_pidm = sfrstcr_pidm
+                    AND dsc_term_code = '201743'
+                    AND s_entry_action LIKE 'F%'
+              )
+      )
+--Main Query
+SELECT
+        DSC_PIDM,
+        d.S_YEAR,
+        h1.PIDM AS Earned_HSCE_2020,
+        h2.PIDM AS Earned_HSCE_2019,
+        h3.PIDM AS Earned_HSCE_2018,
+        CASE WHEN COALESCE(h1.PIDM, h2.PIDM, h3.PIDM) IS NULL THEN 'No' ELSE 'Yes' END,
+        COALESCE(h1.Att_Cr, h2.Att_Cr, h3.Att_Cr) AS Att_Cr,
+        COALESCE(h1.GE_Bucket, h2.GE_Bucket, h3.GE_Bucket) AS GE_Bucket,
+        COALESCE(h1.Subject, h2.Subject, h3.Subject) AS Subject,
+        COALESCE(h1.Course_Nbr, h2.Course_Nbr, h3.Course_Nbr) AS Course_Nbr
+FROM BAILEY.STUDENTS03@DSCIR d
+LEFT JOIN cte_HSCE_2019 h1 ON h1.PIDM = d.DSC_PIDM
+    AND d.S_YEAR = '2020'
+LEFT JOIN cte_HSCE_2018 h2 on h2.PIDM = d.DSC_PIDM
+    AND d.S_YEAR = '2019'
+LEFT JOIN cte_HSCE_2017 h3 on h3.PIDM = d.DSC_PIDM
+     AND d.S_YEAR = '2018'
+WHERE d.S_YEAR IN ('2020', '2019', '2018')
+    AND S_TERM = '2'
+    AND S_EXTRACT = '3'
+    AND S_ENTRY_ACTION IN ('FF', 'FH');
