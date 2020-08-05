@@ -10,7 +10,6 @@ SELECT count(sgrchrt_pidm),
                   WHEN dsc_term_code = '200943' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB200940'
                   WHEN dsc_term_code = '200943' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO200940'
                   WHEN dsc_term_code = '200943' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO200940'
-
                   --201043
                   WHEN dsc_term_code = '201043' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'FTFB201040'
                   WHEN dsc_term_code = '201043' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB201040'
