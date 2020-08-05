@@ -1,18 +1,7 @@
-INSERT
-  INTO sgrchrt (sarchrt_pidm, sarchrt_term_code_entry, sarchrt_chrt_code, sarchrt_activity_date)
+-- INSERT
+--   INTO sgrchrt (sarchrt_pidm, sarchrt_term_code_entry, sarchrt_chrt_code, sarchrt_activity_date)
 
-/*
-FALL
-1st Time, FT, PT, BS, OT
-Cohort FTFB200940, FTPB200940, FTFO200940, FTPO200940
-Count 322
- */
-
-SELECT sgrchrt_pidm,
-       sgrchrt_term_code_eff,
-       sgrchrt_chrt_code,
-       sgrchrt_activity_date
-  FROM (SELECT dsc_pidm AS sgrchrt_pidm,
+SELECT dsc_pidm AS sgrchrt_pidm,
                substr(dsc_term_code, 0, 5) || '0' AS sgrchrt_term_code_eff,
                CASE
                   --200943
@@ -20,7 +9,6 @@ SELECT sgrchrt_pidm,
                   WHEN dsc_term_code = '200943' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB200940'
                   WHEN dsc_term_code = '200943' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO200940'
                   WHEN dsc_term_code = '200943' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO200940'
-
                   --201043
                   WHEN dsc_term_code = '201043' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'FTFB201040'
                   WHEN dsc_term_code = '201043' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB201040'
@@ -66,10 +54,15 @@ SELECT sgrchrt_pidm,
                   WHEN dsc_term_code = '201843' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB201840'
                   WHEN dsc_term_code = '201843' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO201840'
                   WHEN dsc_term_code = '201843' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO201840'
+                  --201943
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'FTFB201940'
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'FTPB201940'
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'FTFO201940'
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'FTPO201940'
                   END AS sgrchrt_chrt_code,
                sysdate AS sgrchrt_activity_date
           FROM students03 s1
-         WHERE dsc_term_code IN ('200943', '201043', '201143', '201243', '201343', '201443', '201543', '201643', '201743', '201843')
+         WHERE dsc_term_code IN ('200943', '201043', '201143', '201243', '201343', '201443', '201543', '201643', '201743', '201843', '201943')
            AND s_pt_ft IN ('F', 'P')
            AND (s_entry_action IN ('FF', 'FH') OR (EXISTS(SELECT 'Y'
                                                             FROM students03 s2
@@ -138,10 +131,15 @@ Count 322
                   WHEN dsc_term_code = '201843' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'TUPB201840'
                   WHEN dsc_term_code = '201843' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'TUFO201840'
                   WHEN dsc_term_code = '201843' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'TUPO201840'
+                  --201943
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'F' AND s_deg_intent = '4' THEN 'TUFB201940'
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'P' AND s_deg_intent = '4' THEN 'TUPB201940'
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'F' AND s_deg_intent != '4' THEN 'TUFO201940'
+                  WHEN dsc_term_code = '201943' and s_pt_ft = 'P' AND s_deg_intent != '4' THEN 'TUPO201940'
                   END AS sgrchrt_chrt_code,
                sysdate AS sgrchrt_activity_date
           FROM students03 s1
-         WHERE dsc_term_code IN ('200943', '201043', '201143', '201243', '201343', '201443', '201543', '201643', '201743', '201843')
+         WHERE dsc_term_code IN ('200943', '201043', '201143', '201243', '201343', '201443', '201543', '201643', '201743', '201843', '201943')
            AND s_pt_ft IN ('F', 'P')
            AND (s_entry_action = 'TU' OR (EXISTS(SELECT 'Y'
                                                    FROM students03 s2
@@ -257,7 +255,4 @@ Count 322
     FROM enroll.students03
    WHERE dsc_term_code IN ('201023', '201123', '201223', '201323', '201423','201523', '201623', '201723', '201823', '201923')
      AND s_entry_action IN ('FF', 'FH', 'TU')
-     AND s_pt_ft IN ('F', 'P')
-     )
- ORDER BY sgrchrt_term_code_eff desc, sgrchrt_chrt_code;
-
+     AND s_pt_ft IN ('F', 'P');
