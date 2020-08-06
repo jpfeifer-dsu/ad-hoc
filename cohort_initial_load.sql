@@ -250,9 +250,18 @@ Count 322
                   WHEN dsc_term_code = '201923' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUFO201920'
                   WHEN dsc_term_code = '201923' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action = 'TU' THEN 'TUPB201920'
                   WHEN dsc_term_code = '201923' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUPO201920'
+                  --202023
+                  WHEN dsc_term_code = '202023' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFB202020'
+                  WHEN dsc_term_code = '202023' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTFO202020'
+                  WHEN dsc_term_code = '202023' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPB202020'
+                  WHEN dsc_term_code = '202023' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action IN ('FF', 'FH') THEN 'FTPO202020'
+                  WHEN dsc_term_code = '202023' AND s_pt_ft = 'F' AND s_deg_intent = '4' AND s_entry_action = 'TU' THEN 'TUFB202020'
+                  WHEN dsc_term_code = '202023' AND s_pt_ft = 'F' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUFO202020'
+                  WHEN dsc_term_code = '202023' AND s_pt_ft = 'P' AND s_deg_intent = '4' AND s_entry_action = 'TU' THEN 'TUPB202020'
+                  WHEN dsc_term_code = '202023' AND s_pt_ft = 'P' AND s_deg_intent != '4' AND s_entry_action = 'TU' THEN 'TUPO202020'
                   END AS sgrchrt_chrt_code,
                sysdate AS sgrchrt_activity_date
     FROM enroll.students03
-   WHERE dsc_term_code IN ('201023', '201123', '201223', '201323', '201423','201523', '201623', '201723', '201823', '201923')
+   WHERE dsc_term_code IN ('201023', '201123', '201223', '201323', '201423','201523', '201623', '201723', '201823', '201923', '202020')
      AND s_entry_action IN ('FF', 'FH', 'TU')
      AND s_pt_ft IN ('F', 'P');
