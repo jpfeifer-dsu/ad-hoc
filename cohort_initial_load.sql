@@ -2,15 +2,15 @@
  Initial Load of Cohorts into Banner
  */
 
-INSERT
-  INTO sgrchrt (sgrchrt_pidm, sgrchrt_term_code_eff, sgrchrt_chrt_code, sgrchrt_activity_date, sgrchrt_surrogate_id, sgrchrt_version)
 
-SELECT sgrchrt_pidm,
+INSERT
+  INTO sgrchrt (sgrchrt_pidm, sgrchrt_term_code_eff, sgrchrt_chrt_code, sgrchrt_activity_date)
+
+
+SELECT DISTINCT sgrchrt_pidm,
        sgrchrt_term_code_eff,
        sgrchrt_chrt_code,
-       sysdate AS sgrchrt_activity_date,
-       rownum + (select max(sgrchrt_surrogate_id) from sgrchrt) as sgrchrt_surrogate_id,
-       1 as sgrchrt_version
+       sysdate AS sgrchrt_activity_date
    FROM (SELECT dsc_pidm AS sgrchrt_pidm,
        substr(dsc_term_code, 0, 5) || '0' AS sgrchrt_term_code_eff,
        CASE
