@@ -3,8 +3,8 @@
  */
 
 
-INSERT
-  INTO sgrchrt (sgrchrt_pidm, sgrchrt_term_code_eff, sgrchrt_chrt_code, sgrchrt_activity_date)
+-- INSERT
+--   INTO sgrchrt (sgrchrt_pidm, sgrchrt_term_code_eff, sgrchrt_chrt_code, sgrchrt_activity_date)
 
 
 SELECT DISTINCT sgrchrt_pidm,
@@ -272,6 +272,63 @@ SELECT dsc_pidm AS sgrchrt_pidm,
           END AS sgrchrt_chrt_code
   FROM enroll.students03
  WHERE dsc_term_code IN
-       ('201023', '201123', '201223', '201323', '201423', '201523', '201623', '201723', '201823', '201923', '202020')
+       ('201023', '201123', '201223', '201323', '201423', '201523', '201623', '201723', '201823', '201923', '202023')
    AND s_entry_action IN ('FF', 'FH', 'TU')
    AND s_pt_ft IN ('F', 'P'));
+
+/*
+ This delete script cleans up students in more than one Cohort due to historical entry action assignment errors
+ */
+
+   WITH cte_bad_cohorts AS (SELECT sgrchrt_pidm,
+                                  MAX(sgrchrt_term_code_eff) AS sgrchrt_term_code_eff
+                             FROM sgrchrt
+                            WHERE sgrchrt_pidm IN (SELECT DISTINCT
+                                                          sgrchrt_pidm
+                                                     FROM sgrchrt
+                                                    WHERE TO_CHAR(sgrchrt_activity_date, 'YYYYMMDD') >= '20200812'
+                                                    GROUP BY sgrchrt_pidm
+                                                   HAVING COUNT(sgrchrt_pidm) > 1)
+                              AND TO_CHAR(sgrchrt_activity_date, 'YYYYMMDD') >= '20200812'
+                            GROUP BY sgrchrt_pidm),
+
+       cte_bad_cohorts_2 AS (SELECT a.sgrchrt_pidm,
+                                    COUNT(a.sgrchrt_pidm),
+                                    a.sgrchrt_term_code_eff,
+                                    MAX(CASE
+                                           WHEN sgrchrt_chrt_code LIKE 'FT%' THEN 1
+                                           ELSE 2
+                                           END) AS rank
+                               FROM sgrchrt a
+                                    INNER JOIN cte_bad_cohorts b
+                                               ON a.sgrchrt_pidm = b.sgrchrt_pidm AND
+                                                  a.sgrchrt_term_code_eff = b.sgrchrt_term_code_eff
+                              WHERE TO_CHAR(sgrchrt_activity_date, 'YYYYMMDD') >= '20200812'
+                              GROUP BY a.sgrchrt_pidm,
+                                       a.sgrchrt_term_code_eff
+                             HAVING COUNT(a.sgrchrt_pidm) > 1)
+
+--DELETE
+SELECT *
+FROM (
+/* Excludes 201540 duplicate FT% Cohorts */
+SELECT a.*
+  FROM sgrchrt a
+       INNER JOIN cte_bad_cohorts_2 c
+                  ON c.sgrchrt_pidm = a.sgrchrt_pidm AND c.rank = CASE
+                                                                     WHEN a.sgrchrt_chrt_code LIKE 'FT%' THEN 1
+                                                                     ELSE 2
+                                                                     END
+
+ UNION
+
+SELECT a.*
+  FROM sgrchrt a
+       INNER JOIN cte_bad_cohorts b
+                  ON a.sgrchrt_pidm = b.sgrchrt_pidm AND a.sgrchrt_term_code_eff = b.sgrchrt_term_code_eff
+ WHERE TO_CHAR(sgrchrt_activity_date, 'YYYYMMDD') >= '20200812'
+   AND NOT EXISTS(SELECT *
+                    FROM cte_bad_cohorts_2 a1
+                   WHERE a1.sgrchrt_pidm = a.sgrchrt_pidm
+                     AND a1.sgrchrt_term_code_eff = a.sgrchrt_term_code_eff)
+    )
